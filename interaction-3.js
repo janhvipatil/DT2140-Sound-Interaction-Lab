@@ -65,6 +65,19 @@ let pressure = 0;       // smoothed values actually sent to the DSP
 let tension = 0.5;
 let vibrato = 0;
 
+let readout = null;
+function showReadout(text) {
+    if (!readout) {
+        const box = document.getElementById("status");
+        if (!box) return;
+        readout = createP("");
+        readout.id("readout");
+        readout.parent(box);
+    }
+    const on = audioContext.state === "running";
+    readout.html(on ? text : "DSP off");
+}
+
 function accelerationChange(accx, accy, accz) {
 }
 
@@ -87,6 +100,7 @@ function rotationChange(rotx, roty, rotz) {
     vibrato *= 0.97;   // shake vibrato decays
     if (pressure < 0.01) pressure = 0;
     playAudio(pressure, tension, vibrato);
+    showReadout("breath " + Math.round(pressure * 100) + "% (" + Math.round(rotx) + "°)");
 }
 
 function mousePressed() {

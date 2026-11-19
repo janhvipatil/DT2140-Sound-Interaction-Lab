@@ -66,6 +66,19 @@ const FORCE_MAX = 0.92;
 let gust = 0;           // smoothed gust strength (0..1)
 let lastForce = null;
 
+let readout = null;
+function showReadout(text) {
+    if (!readout) {
+        const box = document.getElementById("status");
+        if (!box) return;
+        readout = createP("");
+        readout.id("readout");
+        readout.parent(box);
+    }
+    const on = audioContext.state === "running";
+    readout.html(on ? text : "DSP off");
+}
+
 function accelerationChange(accx, accy, accz) {
     // p5 gives acceleration without gravity, so this is ~0 when the phone is still
     let energy = Math.sqrt(accx * accx + accy * accy + accz * accz);
@@ -82,6 +95,7 @@ function accelerationChange(accx, accy, accz) {
     const audible = FORCE_MIN + (FORCE_MAX - FORCE_MIN) * gust;
     const force = gust < 0.1 ? audible * (gust / 0.1) : audible;
     playAudio(force);
+    showReadout("wind " + Math.round(Math.min(force, FORCE_MAX) * 100) + "% (" + Math.round(energy) + ")");
 }
 
 function rotationChange(rotx, roty, rotz) {
