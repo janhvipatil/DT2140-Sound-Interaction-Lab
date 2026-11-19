@@ -11,8 +11,8 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-// Change here to ("tuono") depending on your wasm file name
-const dspName = "bells";
+// windchimes.wasm: faust-dsp/Windchimes/windchimes.dsp, compiled with Faust 2.79.3 (faustwasm)
+const dspName = "windchimes";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -25,7 +25,7 @@ if (typeof module === "undefined") {
 }
 
 // The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-bells.createDSP(audioContext, 1024)
+windchimes.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -55,22 +55,18 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
-// Interaction 2 - "Hand bell"
-// Shake to ring the bell (unchanged). Tilting the phone left/right changes how it is
-// struck: tilted left is a soft, dark strike, tilted right a bright, sharp one.
-let lastCutoff = null;
+// Interaction 2 - "Shake the wind chimes"
+// Works like the other two: a shake triggers the sound. Every shake blows a gust of wind
+// into the chimes. While you keep shaking the wind stays strong; after the last shake it
+// calms down over a few seconds and the chimes slowly ring out.
+// (The chimes only ring properly with wind close to the maximum of 2.)
+const WIND_MAX = 2;
+const HOLD_MS = 1500;     // full wind for this long after the last shake
+const CALM_MS = 3000;     // then the wind dies down over this long
+let lastShake = 0;
+let windTimer = null;
 
 function rotationChange(rotx, roty, rotz) {
-    if (!dspNode) {
-        return;
-    }
-    // roty is -90 (tilted left) .. 90 (tilted right); 0 when lying flat or on desktop
-    const cutoff = Math.round(map(constrain(roty, -60, 60), -60, 60, 1500, 14000) / 100) * 100;
-    if (cutoff !== lastCutoff) {
-        dspNode.setParamValue("/englishBell/strikeCutOff", cutoff);
-        dspNode.setParamValue("/englishBell/strikeSharpness", map(cutoff, 1500, 14000, 0.3, 1.5));
-        lastCutoff = cutoff;
-    }
 }
 
 function mousePressed() {
@@ -117,8 +113,25 @@ function playAudio() {
     if (audioContext.state === 'suspended') {
         return;
     }
-    dspNode.setParamValue("/englishBell/gate", 1)
-    setTimeout(() => { dspNode.setParamValue("/englishBell/gate", 0) }, 100);
+    lastShake = Date.now();
+    dspNode.setParamValue("/windchimes/wind_chimes/wind", WIND_MAX);
+    if (windTimer) {
+        return; // the wind is already blowing: the new shake keeps it going
+    }
+    windTimer = setInterval(() => {
+        const since = Date.now() - lastShake;
+        if (since < HOLD_MS) {
+            return;
+        }
+        const calm = (since - HOLD_MS) / CALM_MS; // 0..1
+        if (calm >= 1) {
+            dspNode.setParamValue("/windchimes/wind_chimes/wind", 0);
+            clearInterval(windTimer);
+            windTimer = null;
+            return;
+        }
+        dspNode.setParamValue("/windchimes/wind_chimes/wind", WIND_MAX * (1 - calm));
+    }, 50);
 }
 
 //==========================================================================================

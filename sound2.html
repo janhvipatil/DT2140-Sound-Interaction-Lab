@@ -10,7 +10,7 @@
     <title>p5.js faust example</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
-    <script src="dsp.js?v=1795101570"></script>
+    <script src="dsp.js?v=1795101984"></script>
   </head>
 
   <body class="grid-container fullbody">
@@ -22,10 +22,15 @@
 
     <div id="info">
       <p>
-        <b>Hand bell</b>
+        <b>Shake the wind chimes</b>
         <br />
         <br />
-        Shake the phone like a hand bell to ring it. While you ring, tilt the phone left or right to change how the bell is struck: tilted left gives a soft, dark strike, tilted right a bright, sharp one. The sound responds to the same gesture you'd use with a real bell, so it needs no explanation.
+        Shake the phone like a gust of wind blowing through wind chimes. While
+        you keep shaking, the wind stays strong and the chimes ring busily; when
+        you stop, the wind calms down over a few seconds and the chimes slowly
+        ring out until everything is quiet again. The wind chimes are a Faust
+        model (faust-dsp/Windchimes/windchimes.dsp) compiled to WebAssembly
+        (windchimes.wasm).
       </p>
     </div>
 
@@ -42,7 +47,7 @@
       </p>
     </footer>
   </body>
-  <script src="helpers.js?v=1795101570"></script>
-  <script src="interaction-2.js?v=1795101570"></script>
-  <script src="sketch.js?v=1795101570"></script>
+  <script src="helpers.js?v=1795101984"></script>
+  <script src="interaction-2.js?v=1795101984"></script>
+  <script src="sketch.js?v=1795101984"></script>
 </html>
