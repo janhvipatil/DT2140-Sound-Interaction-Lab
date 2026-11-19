@@ -10,7 +10,7 @@
     <title>p5.js faust example</title>
     <link rel="stylesheet" href="styles.css" /> 
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
-    <script src="dsp.js?v=1795100020"></script>
+    <script src="dsp.js?v=1795100696"></script>
   </head>
 
   <body class="grid-container fullbody">
@@ -22,14 +22,14 @@
 
     <div id="info">
       <p>
-        <b>Swing the wind</b>
+        <b>Shake up a gust</b>
         <br />
         <br />
-        Swing the phone through the air to make wind. The faster you move it, the
-        stronger and higher the gust, and when you stop the wind dies down slowly,
-        just like a real gust. Holding still is silence. The wind sound was written
-        in Faust (faust-dsp/Nature/wind.dsp) and compiled to WebAssembly (wind.wasm).
-        On a computer, drag the mouse quickly instead.
+        Shake the phone to blow a gust of wind. Every shake starts a strong
+        gust that then dies away over a couple of seconds, so a single shake is a
+        short whoosh and continuous shaking keeps the storm going. The wind sound
+        was written in Faust (faust-dsp/Nature/wind.dsp) and compiled to
+        WebAssembly (wind.wasm) with the Faust toolchain.
       </p>
     </div>
 
@@ -46,7 +46,7 @@
       </p>
     </footer>
   </body>
-  <script src="helpers.js?v=1795100020"></script>
-  <script src="interaction-1.js?v=1795100020"></script>
-  <script src="sketch.js?v=1795100020"></script>
+  <script src="helpers.js?v=1795100696"></script>
+  <script src="interaction-1.js?v=1795100696"></script>
+  <script src="sketch.js?v=1795100696"></script>
 </html>
