@@ -11,8 +11,8 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-// Change here to ("tuono") depending on your wasm file name
-const dspName = "tuono";
+// wind.wasm was compiled from faust-dsp/Nature/wind.dsp
+const dspName = "wind";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -25,7 +25,7 @@ if (typeof module === "undefined") {
 }
 
 // The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-tuono.createDSP(audioContext, 1024)
+wind.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -33,6 +33,9 @@ tuono.createDSP(audioContext, 1024)
         const jsonString = dspNode.getJSON();
         jsonParams = JSON.parse(jsonString)["ui"][0]["items"];
         dspNodeParams = jsonParams
+        // start silent: the wind only blows when you move the phone
+        dspNode.setParamValue("/wind/wind/force", 0);
+        dspNode.setParamValue("/wind/volume", 0.8);
         // const exampleMinMaxParam = findByAddress(dspNodeParams, "/thunder/rumble");
         // // ALWAYS PAY ATTENTION TO MIN AND MAX, ELSE YOU MAY GET REALLY HIGH VOLUMES FROM YOUR SPEAKERS
         // const [exampleMinValue, exampleMaxValue] = getParamMinMax(exampleMinMaxParam);
@@ -51,22 +54,33 @@ tuono.createDSP(audioContext, 1024)
 //
 //==========================================================================================
 
-// Interaction 1 - "Storm in your hand"
-// A hard shake releases one thunderclap. The storm then needs time to roll out, so
-// further shakes are ignored until the cooldown has passed (re-triggering every frame
-// while shaking used to restart the sound constantly and turned it into mush).
-const THUNDER_COOLDOWN_MS = 4000;
-let lastThunder = -Infinity;
+// Interaction 1 - "Swing the wind"
+// Swinging the phone through the air makes wind: the faster you move it, the stronger
+// and higher-pitched the gust. When you stop, the wind dies down slowly, like a real gust.
+// On a desktop (no sensors) drag the mouse: the faster you drag, the stronger the wind.
+let force = 0;          // smoothed wind force sent to the DSP (0..1)
+let lastForce = null;
 
 function accelerationChange(accx, accy, accz) {
+    // p5 gives acceleration without gravity, so this is ~0 when the phone is still
+    let energy = Math.sqrt(accx * accx + accy * accy + accz * accz);
+    if (!Number.isFinite(energy)) energy = 0;
+    if (mouseIsPressed) {
+        energy = Math.max(energy, Math.hypot(movedX, movedY));
+    }
+    const target = constrain(map(energy, 2, 30, 0, 1), 0, 1);
+    // gusts build quickly and fade slowly
+    const rate = target > force ? 0.25 : 0.03;
+    force += (target - force) * rate;
+    if (force < 0.005) force = 0;
+    playAudio(force);
 }
 
 function rotationChange(rotx, roty, rotz) {
 }
 
 function mousePressed() {
-    // Desktop debugging: click anywhere to trigger the thunder.
-    triggerThunder();
+    // desktop debugging: dragging is handled in accelerationChange
 }
 
 function deviceMoved() {
@@ -80,17 +94,6 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    triggerThunder();
-}
-
-function triggerThunder() {
-    const now = millis();
-    if (now - lastThunder < THUNDER_COOLDOWN_MS) {
-        return;
-    }
-    if (playAudio()) {
-        lastThunder = now;
-    }
 }
 
 function getMinMaxParam(address) {
@@ -111,20 +114,19 @@ function getMinMaxParam(address) {
 //
 //==========================================================================================
 
-function playAudio() {
+function playAudio(force) {
     if (!dspNode) {
-        return false;
+        return;
     }
     if (audioContext.state === 'suspended') {
-        return false;
+        return;
     }
-    // Edit here the addresses ("/thunder/rumble") depending on your WASM controls (you can see 
-    // them printed on the console of your browser when you load the page)
-    // For example if you change to a bell sound, here you could use "/churchBell/gate" instead of
-    // "/thunder/rumble".
-    dspNode.setParamValue("/thunder/rumble", 1)
-    setTimeout(() => { dspNode.setParamValue("/thunder/rumble", 0) }, 100);
-    return true;
+    const rounded = Math.round(force * 100) / 100;
+    if (rounded === lastForce) {
+        return;
+    }
+    dspNode.setParamValue("/wind/wind/force", rounded);
+    lastForce = rounded;
 }
 
 //==========================================================================================
