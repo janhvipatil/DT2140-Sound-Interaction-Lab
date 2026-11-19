@@ -55,7 +55,22 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
+// Interaction 2 - "Hand bell"
+// Shake to ring the bell (unchanged). Tilting the phone left/right changes how it is
+// struck: tilted left is a soft, dark strike, tilted right a bright, sharp one.
+let lastCutoff = null;
+
 function rotationChange(rotx, roty, rotz) {
+    if (!dspNode) {
+        return;
+    }
+    // roty is -90 (tilted left) .. 90 (tilted right); 0 when lying flat or on desktop
+    const cutoff = Math.round(map(constrain(roty, -60, 60), -60, 60, 1500, 14000) / 100) * 100;
+    if (cutoff !== lastCutoff) {
+        dspNode.setParamValue("/englishBell/strikeCutOff", cutoff);
+        dspNode.setParamValue("/englishBell/strikeSharpness", map(cutoff, 1500, 14000, 0.3, 1.5));
+        lastCutoff = cutoff;
+    }
 }
 
 function mousePressed() {

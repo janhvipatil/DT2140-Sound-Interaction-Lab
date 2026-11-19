@@ -51,16 +51,22 @@ tuono.createDSP(audioContext, 1024)
 //
 //==========================================================================================
 
+// Interaction 1 - "Storm in your hand"
+// A hard shake releases one thunderclap. The storm then needs time to roll out, so
+// further shakes are ignored until the cooldown has passed (re-triggering every frame
+// while shaking used to restart the sound constantly and turned it into mush).
+const THUNDER_COOLDOWN_MS = 4000;
+let lastThunder = -Infinity;
+
 function accelerationChange(accx, accy, accz) {
-    // playAudio()
 }
 
 function rotationChange(rotx, roty, rotz) {
 }
 
 function mousePressed() {
-    playAudio()
-    // Use this for debugging from the desktop!
+    // Desktop debugging: click anywhere to trigger the thunder.
+    triggerThunder();
 }
 
 function deviceMoved() {
@@ -74,7 +80,17 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    playAudio();
+    triggerThunder();
+}
+
+function triggerThunder() {
+    const now = millis();
+    if (now - lastThunder < THUNDER_COOLDOWN_MS) {
+        return;
+    }
+    if (playAudio()) {
+        lastThunder = now;
+    }
 }
 
 function getMinMaxParam(address) {
@@ -97,10 +113,10 @@ function getMinMaxParam(address) {
 
 function playAudio() {
     if (!dspNode) {
-        return;
+        return false;
     }
     if (audioContext.state === 'suspended') {
-        return;
+        return false;
     }
     // Edit here the addresses ("/thunder/rumble") depending on your WASM controls (you can see 
     // them printed on the console of your browser when you load the page)
@@ -108,6 +124,7 @@ function playAudio() {
     // "/thunder/rumble".
     dspNode.setParamValue("/thunder/rumble", 1)
     setTimeout(() => { dspNode.setParamValue("/thunder/rumble", 0) }, 100);
+    return true;
 }
 
 //==========================================================================================

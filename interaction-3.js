@@ -51,16 +51,46 @@ brass.createDSP(audioContext, 1024)
 //
 //==========================================================================================
 
+// Interaction 3 - "Tilt to blow"
+// The phone is the horn. Lying flat it is silent; tilt the top edge up towards you and
+// you blow harder (more pressure = louder, brassier). Tilt left/right to bend the lips
+// and change the note. Shaking adds vibrato that fades out again.
+// On a desktop (no sensors) hold the mouse button: height = pressure, left/right = note.
+let gotSensors = false;
+window.addEventListener("deviceorientation", (e) => {
+    if (e.beta !== null) gotSensors = true;
+});
+
+let pressure = 0;       // smoothed values actually sent to the DSP
+let tension = 0.5;
+let vibrato = 0;
+
 function accelerationChange(accx, accy, accz) {
-    // playAudio()
 }
 
 function rotationChange(rotx, roty, rotz) {
+    let targetPressure, targetTension;
+    if (gotSensors) {
+        // rotx: 0 = flat on the table, ~90 = upright facing you
+        targetPressure = constrain(map(rotx, 10, 70, 0, 1), 0, 1);
+        targetTension = constrain(map(roty, -45, 45, 0.3, 0.7), 0.3, 0.7);
+    } else if (mouseIsPressed) {
+        targetPressure = constrain(map(mouseY, height, 0, 0.2, 1), 0, 1);
+        targetTension = constrain(map(mouseX, 0, width, 0.3, 0.7), 0.3, 0.7);
+    } else {
+        targetPressure = 0;
+        targetTension = tension;
+    }
+    // smooth so the sound doesn't jump with sensor noise
+    pressure += (targetPressure - pressure) * 0.15;
+    tension += (targetTension - tension) * 0.15;
+    vibrato *= 0.97;   // shake vibrato decays
+    if (pressure < 0.01) pressure = 0;
+    playAudio(pressure, tension, vibrato);
 }
 
 function mousePressed() {
-    playAudio(mouseX/windowWidth)
-    // Use this for debugging from the desktop!
+    // handled continuously in rotationChange while the mouse is held
 }
 
 function deviceMoved() {
@@ -74,7 +104,7 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    playAudio();
+    vibrato = 0.8;
 }
 
 function getMinMaxParam(address) {
@@ -95,15 +125,26 @@ function getMinMaxParam(address) {
 //
 //==========================================================================================
 
-function playAudio(pressure) {
+let lastSent = { pressure: null, tension: null, vibrato: null };
+
+function playAudio(pressure, tension, vibrato) {
     if (!dspNode) {
         return;
     }
     if (audioContext.state === 'suspended') {
         return;
     }
-    console.log(pressure)
-    dspNode.setParamValue("/brass/blower/pressure", pressure)
+    // only send values that actually changed, and never NaN (it would silence the model)
+    const send = (key, address, value) => {
+        if (!Number.isFinite(value)) return;
+        const rounded = Math.round(value * 1000) / 1000;
+        if (rounded === lastSent[key]) return;
+        dspNode.setParamValue(address, rounded);
+        lastSent[key] = rounded;
+    };
+    send("pressure", "/brass/blower/pressure", pressure);
+    send("tension", "/brass/brassModel/lipsTension", tension);
+    send("vibrato", "/brass/blower/vibratoGain", vibrato);
 }
 
 //==========================================================================================
