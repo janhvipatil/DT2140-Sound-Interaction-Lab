@@ -10,7 +10,7 @@
     <title>p5.js faust example</title>
     <link rel="stylesheet" href="styles.css" /> 
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
-    <script src="dsp.js?v=1795100966"></script>
+    <script src="dsp.js?v=1795101570"></script>
   </head>
 
   <body class="grid-container fullbody">
@@ -22,14 +22,15 @@
 
     <div id="info">
       <p>
-        <b>Shake up a storm</b>
+        <b>Shake to light the fire</b>
         <br />
         <br />
-        Shake the phone to set off a thunderclap. Like a real storm, the thunder
-        cracks and then rolls on for a few seconds; shaking again while it is still
-        rumbling does nothing, so each clap can finish. Wait for the storm to
-        settle, then shake again for the next strike. The thunder is a Faust
-        model (faust-dsp/Nature/thunder.dsp) compiled to WebAssembly.
+        Shake the phone to light a fire, and keep shaking to stoke it. After
+        the last shake the fire burns on for a few seconds and then slowly dies
+        down, so you have to keep tending it. Turn the phone face down and the
+        wood becomes wet: the fire spits with louder, sharper crackles. The fire
+        is a Faust model (faust-dsp/Nature/fire.dsp) compiled to WebAssembly
+        (fire.wasm).
       </p>
     </div>
 
@@ -46,7 +47,7 @@
       </p>
     </footer>
   </body>
-  <script src="helpers.js?v=1795100966"></script>
-  <script src="interaction-1.js?v=1795100966"></script>
-  <script src="sketch.js?v=1795100966"></script>
+  <script src="helpers.js?v=1795101570"></script>
+  <script src="interaction-1.js?v=1795101570"></script>
+  <script src="sketch.js?v=1795101570"></script>
 </html>

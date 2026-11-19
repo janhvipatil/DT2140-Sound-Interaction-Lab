@@ -11,8 +11,8 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-// tuono.wasm is the thunder model (faust-dsp/Nature/thunder.dsp)
-const dspName = "tuono";
+// fire.wasm: faust-dsp/Nature/fire.dsp, compiled with Faust 2.79.3 (faustwasm)
+const dspName = "fire";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -25,7 +25,7 @@ if (typeof module === "undefined") {
 }
 
 // The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-tuono.createDSP(audioContext, 1024)
+fire.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -55,14 +55,27 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
-// Interaction 1 - "Shake up a storm"
-// Works exactly like Interaction 2: a shake triggers the sound. Each shake sets off a
-// thunderclap. Thunder needs a few seconds to roll out, so shakes during that time are
-// ignored instead of restarting it (restarting every shake turned it into noise).
-const THUNDER_COOLDOWN_MS = 3000;
-let lastThunder = 0;
+// Interaction 1 - "Shake to light the fire"
+// Works like Interaction 2: a shake triggers the sound. Shaking lights the fire (or stokes
+// it if it is already burning). It burns for a few seconds after the last shake and then
+// dies down. Turn the phone face down and the wood becomes wet: louder, spitting crackles.
+const BURN_MS = 3000;     // how long the fire burns after the last shake
+const FADE_MS = 1500;     // how long it takes to die down
+const FIRE_VOLUME = 0.7;
+let burnTimer = null;
+let fadeTimer = null;
+let lastWet = null;
 
 function rotationChange(rotx, roty, rotz) {
+    if (!dspNode) {
+        return;
+    }
+    // rotx is around 0 lying face up, around +-180 face down
+    const wet = Math.abs(rotx) > 120 ? 1 : 0;
+    if (wet !== lastWet) {
+        dspNode.setParamValue("/fire/wet", wet);
+        lastWet = wet;
+    }
 }
 
 function mousePressed() {
@@ -109,12 +122,25 @@ function playAudio() {
     if (audioContext.state === 'suspended') {
         return;
     }
-    if (Date.now() - lastThunder < THUNDER_COOLDOWN_MS) {
-        return;
-    }
-    lastThunder = Date.now();
-    dspNode.setParamValue("/thunder/rumble", 1)
-    setTimeout(() => { dspNode.setParamValue("/thunder/rumble", 0) }, 100);
+    // light / stoke the fire
+    clearInterval(fadeTimer);
+    clearTimeout(burnTimer);
+    dspNode.setParamValue("/fire/volume", FIRE_VOLUME);
+    dspNode.setParamValue("/fire/gate", 1);
+    // after the last shake, let it burn a while and then die down
+    burnTimer = setTimeout(() => {
+        let volume = FIRE_VOLUME;
+        const step = FIRE_VOLUME / (FADE_MS / 50);
+        fadeTimer = setInterval(() => {
+            volume -= step;
+            if (volume <= 0) {
+                clearInterval(fadeTimer);
+                dspNode.setParamValue("/fire/gate", 0);
+                return;
+            }
+            dspNode.setParamValue("/fire/volume", volume);
+        }, 50);
+    }, BURN_MS);
 }
 
 //==========================================================================================

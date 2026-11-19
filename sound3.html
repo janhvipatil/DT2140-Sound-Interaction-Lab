@@ -10,7 +10,7 @@
     <title>p5.js faust example</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
-    <script src="dsp.js?v=1795100966"></script>
+    <script src="dsp.js?v=1795101570"></script>
   </head>
 
   <body class="grid-container fullbody">
@@ -22,14 +22,14 @@
 
     <div id="info">
       <p>
-        <b>Shake a horn call</b>
+        <b>Shake out water drops</b>
         <br />
         <br />
-        Shake the phone to blow a short brass note; keep shaking to hold the
-        note, stop and it ends half a second later. Tilt the phone left or right
-        while you play to change the lip tension of the virtual player, which
-        bends the note, the same way tilting changes the bell's strike in
-        Interaction 2.
+        Shake the phone like a wet umbrella and a water drop falls with every
+        shake. Tilt the phone left for big, low "plop"s or right for small, high
+        "plip"s. Every drop is slightly different in pitch, so a series of shakes
+        sounds like a natural, dripping tap. The water drop is a Faust model
+        (faust-dsp/Nature/bubble.dsp) compiled to WebAssembly (bubble.wasm).
       </p>
     </div>
 
@@ -46,7 +46,7 @@
       </p>
     </footer>
   </body>
-  <script src="helpers.js?v=1795100966"></script>
-  <script src="interaction-3.js?v=1795100966"></script>
-  <script src="sketch.js?v=1795100966"></script>
+  <script src="helpers.js?v=1795101570"></script>
+  <script src="interaction-3.js?v=1795101570"></script>
+  <script src="sketch.js?v=1795101570"></script>
 </html>

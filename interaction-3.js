@@ -11,8 +11,8 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-// Change here to ("tuono") depending on your wasm file name
-const dspName = "brass";
+// bubble.wasm: faust-dsp/Nature/bubble.dsp, compiled with Faust 2.79.3 (faustwasm)
+const dspName = "bubble";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -25,7 +25,7 @@ if (typeof module === "undefined") {
 }
 
 // The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-brass.createDSP(audioContext, 1024)
+bubble.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -55,24 +55,15 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
-// Interaction 3 - "Shake a horn call"
-// Works like Interaction 2: every shake blows a short brass note. Keep shaking to hold the
-// note. Tilting the phone left/right changes the lip tension, which changes the note,
-// just like the tilt changes the bell's strike in Interaction 2.
-const NOTE_MS = 500;
-let noteTimer = null;
-let lastTension = null;
+// Interaction 3 - "Shake out water drops"
+// Works like Interaction 2: every shake lets a drop fall. Tilting the phone left/right
+// sets the size of the drops: left gives big, low "plop"s, right small, high "plip"s.
+// Each drop is slightly detuned so a series of drops sounds natural, like a dripping tap.
+let dropFreq = 600;
 
 function rotationChange(rotx, roty, rotz) {
-    if (!dspNode) {
-        return;
-    }
     // roty is -90 (tilted left) .. 90 (tilted right); 0 when lying flat or on desktop
-    const tension = Math.round(map(constrain(roty, -45, 45), -45, 45, 0.3, 0.7) * 100) / 100;
-    if (tension !== lastTension) {
-        dspNode.setParamValue("/brass/brassModel/lipsTension", tension);
-        lastTension = tension;
-    }
+    dropFreq = map(constrain(roty, -60, 60), -60, 60, 300, 1500);
 }
 
 function mousePressed() {
@@ -119,10 +110,10 @@ function playAudio() {
     if (audioContext.state === 'suspended') {
         return;
     }
-    // blow, and stop blowing NOTE_MS after the last shake
-    dspNode.setParamValue("/brass/blower/pressure", 0.8)
-    clearTimeout(noteTimer);
-    noteTimer = setTimeout(() => { dspNode.setParamValue("/brass/blower/pressure", 0) }, NOTE_MS);
+    const freq = Math.round(dropFreq * (0.9 + Math.random() * 0.2));
+    dspNode.setParamValue("/bubble/bubble/freq", freq)
+    dspNode.setParamValue("/bubble/drop", 1)
+    setTimeout(() => { dspNode.setParamValue("/bubble/drop", 0) }, 100);
 }
 
 //==========================================================================================
