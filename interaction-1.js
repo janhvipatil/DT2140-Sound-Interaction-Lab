@@ -35,7 +35,7 @@ wind.createDSP(audioContext, 1024)
         dspNodeParams = jsonParams
         // start silent: the wind only blows when you move the phone
         dspNode.setParamValue("/wind/wind/force", 0);
-        dspNode.setParamValue("/wind/volume", 0.8);
+        dspNode.setParamValue("/wind/volume", 1);
         // const exampleMinMaxParam = findByAddress(dspNodeParams, "/thunder/rumble");
         // // ALWAYS PAY ATTENTION TO MIN AND MAX, ELSE YOU MAY GET REALLY HIGH VOLUMES FROM YOUR SPEAKERS
         // const [exampleMinValue, exampleMaxValue] = getParamMinMax(exampleMinMaxParam);
@@ -58,7 +58,12 @@ wind.createDSP(audioContext, 1024)
 // Swinging the phone through the air makes wind: the faster you move it, the stronger
 // and higher-pitched the gust. When you stop, the wind dies down slowly, like a real gust.
 // On a desktop (no sensors) drag the mouse: the faster you drag, the stronger the wind.
-let force = 0;          // smoothed wind force sent to the DSP (0..1)
+// In wind.dsp the force sets both loudness and filter pitch. Below ~0.6 the wind is a quiet
+// sub-bass rumble phone speakers can't play; above ~0.95 the filter self-oscillates and gets
+// dangerously loud. So a gust (0..1) is mapped into the audible, safe range 0.6..0.92.
+const FORCE_MIN = 0.6;
+const FORCE_MAX = 0.92;
+let gust = 0;           // smoothed gust strength (0..1)
 let lastForce = null;
 
 function accelerationChange(accx, accy, accz) {
@@ -68,11 +73,14 @@ function accelerationChange(accx, accy, accz) {
     if (mouseIsPressed) {
         energy = Math.max(energy, Math.hypot(movedX, movedY));
     }
-    const target = constrain(map(energy, 2, 30, 0, 1), 0, 1);
+    const target = constrain(map(energy, 1, 20, 0, 1), 0, 1);
     // gusts build quickly and fade slowly
-    const rate = target > force ? 0.25 : 0.03;
-    force += (target - force) * rate;
-    if (force < 0.005) force = 0;
+    const rate = target > gust ? 0.25 : 0.03;
+    gust += (target - gust) * rate;
+    if (gust < 0.002) gust = 0;
+    // last 10% of the fade ramps down to silence, the rest stays in the audible range
+    const audible = FORCE_MIN + (FORCE_MAX - FORCE_MIN) * gust;
+    const force = gust < 0.1 ? audible * (gust / 0.1) : audible;
     playAudio(force);
 }
 
@@ -121,7 +129,7 @@ function playAudio(force) {
     if (audioContext.state === 'suspended') {
         return;
     }
-    const rounded = Math.round(force * 100) / 100;
+    const rounded = Math.min(FORCE_MAX, Math.round(force * 100) / 100);
     if (rounded === lastForce) {
         return;
     }
